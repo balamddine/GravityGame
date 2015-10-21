@@ -1,0 +1,417 @@
+﻿
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Gravity Game</title>
+    <style type="text/css">
+    #MyCanvas{border:1px solid black;background-color:Black;}
+    </style>
+    <script src="Scripts/jquery-1.8.2.js" type="text/javascript"></script>
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var ctx = $("#MyCanvas")[0].getContext("2d"); // the "context" of the canvas that will be used (2D or 3D)
+            var cw = 400; // width of the rectangular area
+            var ch = 400; // height of the rectangular area
+            var Fps = 30;
+            var gravity = 0.5;
+            var onGround = true;
+            var level = 1;
+            var shoot;
+
+            var game = setInterval(function () {
+                Update();
+                Draw();
+            }, 1000 / Fps);
+
+            var Block = function Block(sp, color, x, y, w, h, lvl) {
+                var model = {
+
+                    blockX: x,
+                    blockY: y,
+                    blockW: w,
+                    blockH: h,
+                    blockColor: color,
+                    blockSpeed: sp,
+                    blocklevel: lvl,
+                    draw: function () {
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.fillRect(this.blockX, this.blockY, this.blockW, this.blockH);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+                return model;
+            };
+
+
+            var Missile = function Missile(sp, x, y, r, d, lvl) {
+                var model = {
+                    MissleX: x,
+                    MissleY: y,
+                    MissleR: r,
+                    MissleSp: sp,
+                    MissleDir: d,
+                    MissleLvl: lvl,
+                    draw: function () {
+                        ctx.fillStyle = "#FFFFFF";
+                        ctx.beginPath();
+                        ctx.arc(this.MissleX, this.MissleY, this.MissleR, 0, Math.PI * 2, true);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+                return model;
+            };
+
+            function Ball(B) {
+                B.speed = this.sp;
+                B.OnBlock = false;
+                B.jumping = false;
+                B.MaxJump = 0;
+
+                B.draw = function () {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+                    ctx.closePath();
+                    ctx.fill();
+                };
+                return B;
+            }
+
+
+            function addBlocks(sp, color, x, y, w, h, lvl) {
+                var blk = new Block(sp, color, x, y, w, h, lvl);
+                Blocks.collection.push(blk);
+            }
+            var Blocks = {
+                collection: [],
+                draw: function () {
+                    for (var i = 0; i < this.collection.length; i++) {
+                        this.collection[i].draw();
+                    }
+                }
+
+            };
+
+            function addMissiles(sp, x, y, r, d, lvl) {
+                var msl = new Missile(sp, x, y, r, d, lvl);
+                Missiles.collection.push(msl);
+            }
+            var Missiles = {
+                collection: [],
+                draw: function () {
+                    for (var i = 0; i < this.collection.length; i++) {
+                        this.collection[i].draw();
+                    }
+                },
+                update: function () {
+                    for (var i = 0; i < this.collection.length; i++) {
+                        if (Missiles.collection[i].MissleDir == "L") {
+                            Missiles.collection[i].MissleX -= Missiles.collection[i].MissleSp;
+                            if (Missiles.collection[i].MissleX < 0) {
+                                if (level == 2)
+                                    Missiles.collection[i].MissleX = 305;
+                                else if (level == 3) {
+                                    Missiles.collection[i].MissleX = 390;
+                                }
+                            }
+                        }
+                        else if (Missiles.collection[i].MissleDir == "R") {
+                            Missiles.collection[i].MissleX += Missiles.collection[i].MissleSp;
+                            if (Missiles.collection[i].MissleX > cw) {
+                                if (level == 2)
+                                    Missiles.collection[i].MissleX = 60;
+                                else if (level == 3) {
+                                    Missiles.collection[i].MissleX = 0;
+                                }
+                            }
+                        }
+                        else if (Missiles.collection[i].MissleDir == "D") {
+                            Missiles.collection[i].MissleY += Missiles.collection[i].MissleSp;
+                            if (Missiles.collection[i].MissleY > ch) {
+                                if (level == 3) {
+                                    Missiles.collection[i].MissleY = 15;
+                                }
+                                else if (level == 4) {
+                                    Missiles.collection[i].MissleY = 15;
+                                }
+                            }
+
+                        }
+                    }
+
+                }
+            };
+
+            var ball = new Ball({
+                sp: 5.5,
+                x: ch / 2,
+                y: ch - 10,
+                radius: 10,
+                color: "#FFFFFF"
+            });
+
+
+            function Level1() {
+                addBlocks(4, "Red", 50, 70, 50, 5, 1);
+                addBlocks(0, "Red", 200, 320, 120, 5, 1);
+                addBlocks(0, "Red", 80, 220, 80, 5, 1);
+                addBlocks(0, "Red", 220, 150, 65, 5, 1);
+                addBlocks(0, "Green", 10, 0, 25, 3, 1);
+
+            }
+
+            function Level2() {
+                addBlocks(0, "Red", 200, 320, 120, 5, 2);
+                addBlocks(0, "Yellow", 305, 300, 15, 20, 2);
+
+                addBlocks(0, "Red", 50, 180, 100, 5, 2);
+                addBlocks(0, "Yellow", 50, 160, 15, 20, 2);
+
+                addBlocks(0, "Red", 260, 80, 4, 20, 2);
+
+                addBlocks(0, "Green", 395, 0, 4, 20, 2);
+
+                addMissiles(3, 305, 310, 5, "L", 2);
+                addMissiles(8, 60, 170, 5, "R", 2);
+
+
+            }
+
+            function Level3() {
+                addBlocks(0, "Red", 260, 255, 4, 20, 3);
+                addBlocks(0, "Red", 80, 120, 4, 20, 3);
+                addBlocks(3, "Red", 150, 70, 20, 20, 3);
+                addBlocks(0, "Red", 280, 30, 4, 20, 3);
+                addBlocks(0, "Yellow", 0, 165, 4, 20, 3);
+                addBlocks(0, "Green", 395, 98, 4, 20, 3);
+                addBlocks(0, "Yellow", 230, 0, 20, 5, 3);
+                addBlocks(0, "Red", 130, 230, 50, 5, 3);
+                addMissiles(15, 0, 170, 5, "R");
+                addMissiles(7, 0, 170, 5, "R");
+                addMissiles(12, 240, 0, 5, "D");
+            }
+            function Level4() {
+
+
+                addBlocks(0, "Red", 20, 320, 21, 5, 4);
+                addBlocks(0, "Red", 100, 290, 21, 5, 4);
+                addBlocks(0, "Red", 130, 160, 21, 5, 4);
+                addBlocks(6, "Red", 70, 230, 21, 5, 4);
+                addBlocks(0, "Blue", 170, 100, 50, 5, 4);
+                addBlocks(0, "Blue", 280, 170, 50, 5, 4);
+                addBlocks(0, "Green", 370, 300, 10, 5, 4);
+
+                addBlocks(0, "Yellow", 75,0, 20, 5, 4);
+                addBlocks(0, "Yellow", 155,0, 20, 5, 4);
+                addBlocks(0, "Yellow", 245, 0, 20, 5, 4);
+                addBlocks(0, "Yellow", 290, 0, 20, 5, 4);
+
+                addMissiles(12, 80, 0, 5, "D");
+                addMissiles(12, 160, 0, 5, "D");
+                addMissiles(12, 250, 0, 5, "D");
+                addMissiles(12, 300, 0, 5, "D");
+            }
+            function DrawLevel() {
+                switch (level) {
+                    case 2: Level2(); break;
+                    case 3: Level3(); break;
+                    case 4: Level4(); break;
+                }
+            }
+            Level1();
+            function Draw() {
+                if (level == 4) {
+                    ball.radius = 7;
+                    gravity = 0.9;
+                }
+                ball.draw();
+                Blocks.draw();
+                Missiles.draw();
+            }
+
+            function Update() {
+                ctx.clearRect(0, 0, cw, ch);
+
+                if (keydown.left) {
+                    if (!ball.jumping) {
+                        ball.color = "#FFFFFF";
+                    } else {
+                        ball.color = "#4285F4";
+                    }
+                    ball.x -= ball.sp;
+                    if (ball.x < ball.radius) { // hit the left wall 
+                        ball.x = ball.radius;
+
+                    }
+                }
+                if (keydown.right) {
+                    if (!ball.jumping) {
+                        ball.color = "#FFFFFF";
+                    } else {
+                        ball.color = "#4285F4";
+                    }
+                    ball.x += ball.sp;
+                    if (ball.x > (cw - ball.radius)) { // ball hit the right wall
+                        ball.x = (cw - ball.radius);
+
+                    }
+                }
+
+                if (keydown.up) {
+                    if (!ball.jumping) {
+                        ball.jumping = true;
+
+                        ball.OnBlock = false;
+                        ball.MaxJump = -ball.sp * 2;
+
+                    }
+                    else {
+                        ball.color = "#4285F4";
+                    }
+                }
+
+
+                ball.MaxJump += gravity;
+                ball.y += ball.MaxJump;
+
+
+                if (ball.y >= ch - ball.radius) { // if the ball is under the bottom
+                    ball.y = ch - ball.radius;
+                    ball.jumping = false;
+
+                    ball.color = "#FFFFFF";
+                }
+
+                if (ball.y < 0) { // if reached the top border
+                    ball.y = ball.radius;
+                }
+                for (var j = 0; j < Blocks.collection.length; j++) {
+                    var block = Blocks.collection[j];
+                    if (Collision(ball, block)) { // if collide
+                        ball.y = (block.blockY - ball.radius);
+                        ball.jumping = false;
+
+                        ball.MaxJump = 0;
+                        ball.color = "#FFFFFF";
+                        if (block.blockColor == "Green") {
+                            level++;
+                            Blocks.collection = [];
+                            Missiles.collection = [];
+                            ball.x = cw / 2;
+                            ball.y = ch - ball.radius;
+                            DrawLevel();
+
+
+                            break;
+
+                        }
+                        else if (block.blockColor == "Blue" && block.blocklevel == 4 && level == 4) {
+                            ball.x -= 2;
+                        }
+
+
+                    }
+                }
+
+                switch (level) {
+                    case 1:
+                        if (Blocks.collection.length > 0) {
+                            if (((Blocks.collection[0].blockX + Blocks.collection[0].blockW) >= cw) || (Blocks.collection[0].blockX <= 0)) {
+                                Blocks.collection[0].blockSpeed *= -1;
+                            }
+                            Blocks.collection[0].blockX += Blocks.collection[0].blockSpeed;
+                        }
+                        break;
+                    case 2: case 3: case 4:
+                        if (Missiles.collection.length > 0) {
+
+                            Missiles.update();
+                            for (j = 0; j < Missiles.collection.length; j++) {
+                                if (MissileBallCollision(ball, Missiles.collection[j])) {
+                                    ball.x = cw / 2;
+                                    ball.y = ch - ball.radius;
+                                }
+                            }
+                        }
+                        if (level == 3 && Blocks.collection.length > 0) {
+                            if (((Blocks.collection[2].blockX + Blocks.collection[2].blockW) >= cw) || (Blocks.collection[2].blockX <= 0)) {
+                                Blocks.collection[2].blockSpeed *= -1;
+                            }
+
+                            Blocks.collection[2].blockX += Blocks.collection[2].blockSpeed;
+                        }
+                       else if (level == 4 && Blocks.collection.length > 0) {
+                            if (((Blocks.collection[3].blockX + Blocks.collection[3].blockW) >= cw) || (Blocks.collection[3].blockX <= 0)) {
+                                Blocks.collection[3].blockSpeed *= -1;
+                            }
+                        }
+                        Blocks.collection[3].blockX += Blocks.collection[3].blockSpeed;
+
+                        break;
+
+
+
+                        break;
+                }
+
+
+
+            } //update
+
+
+            function Collision(circle, rect) {
+                var distX = circle.x - rect.blockX - rect.blockW / 2;
+                var distY = circle.y - rect.blockY - rect.blockH / 2;
+                distX = Math.abs(distX);
+                distY = Math.abs(distY);
+
+                if (distX > (rect.blockW / 2 + circle.radius)) {
+                    return false;
+                }
+                if (distY > (rect.blockH / 2 + circle.radius)) {
+                    return false;
+                }
+
+                if (distX <= (rect.blockW / 2)) {
+
+                    return true;
+                }
+                if (distY <= (rect.blockH / 2)) {
+
+                    return true;
+                }
+
+                var dx = distX - rect.blockW / 2;
+                var dy = distY - rect.blockH / 2;
+                return (dx * dx + dy * dy <= (circle.radius * circle.radius));
+            }
+
+            function MissileBallCollision(ball, missile) {
+                var minDistance = ball.radius + missile.MissleR;
+                var xDist = missile.MissleX - ball.x;
+                var yDist = missile.MissleY - ball.y;
+                var distance = Math.sqrt(xDist * xDist + yDist * yDist);
+                return distance < minDistance
+
+            }
+        });
+    </script>
+</head>
+<body>
+<script src="Scripts/jqueryhotkey.js" type="text/javascript"></script>
+    <script src="Scripts/KeyStatus.js" type="text/javascript"></script>
+    <form id="form1" runat="server">
+    <div>
+    <canvas id="MyCanvas" width="400" height="400" >Oh Shit :( !!! your browser do not support canvas :@ </canvas>
+    </div>
+    <b>Make the ball reach the green door to win  </b><br />
+    Controls : <img src="http://bulk2.destructoid.com/ul/user/5/56001-227292-ArrowKeysjpg-620x.jpg" width="60" height="60" alt="controls" style="position: relative;
+    top: 16px;" />
+    </form>
+</body>
+</html>
